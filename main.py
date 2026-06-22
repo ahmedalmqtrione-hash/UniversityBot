@@ -1,8 +1,8 @@
 import os
 import logging
 import time
-import sys
 import subprocess
+import sys
 from datetime import datetime
 
 import telegram
@@ -15,10 +15,10 @@ from security import security
 from ui_builder import get_student_menu, get_admin_menu, get_back_menu, get_secure_links_menu, get_files_list
 
 # ==========================================
-# التثبيت التلقائي للمكتبات (لضمان العمل في أي بيئة)
+# التثبيت التلقائي للمكتبات
 # ==========================================
 def install_packages():
-    required = ['requests', 'pillow', 'imageio', 'numpy']
+    required = ['requests', 'pillow', 'imageio']
     for package in required:
         try:
             __import__(package)
@@ -31,12 +31,13 @@ import requests
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
 
 # ==========================================
-# معالج الأخطاء (يمنع توقف البوت)
+# معالج الأخطاء
 # ==========================================
 async def error_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if isinstance(context.error, telegram.error.BadRequest):
         return
     elif isinstance(context.error, telegram.error.Conflict):
+        print("⚠️ تم اكتشاف تعارض. سيتم إعادة التشغيل...")
         os.execv(sys.executable, ['python'] + sys.argv)
     else:
         logging.error(f"Update {update} caused error {context.error}")
@@ -51,7 +52,7 @@ def get_smart_schedule():
     SCHEDULE = {
         "السبت":"10-8 لغة C++ (أ/ رحاب) | 12-10 إنجليزي (أ/ اسري)",
         "الأحد":"11-8 احتمالات (د/ الصلوي) | 2-12 ويب (أ/ بشينة)",
-        "الاثنين":"10-8 محاسبة (أ/ सارة) | 12-10 عربي (د/ رضوان)",
+        "الاثنين":"10-8 محاسبة (أ/ سارة) | 12-10 عربي (د/ رضوان)",
         "الثلاثاء":"10-8 ويب عملي (أ/ أمنية) | 12-10 ويب عملي (أ/ أمنية)",
         "الأربعاء":"10-8 مهارات (د/ المشرفي) | 12-10 C++ عملي (أ/ الشيباني)",
         "الخميس":"🎉 إجازة رسمية 🎉",
@@ -86,7 +87,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     )
 
 # ==========================================
-# معالج الأزرار
+# معالج الأزرار (القلب)
 # ==========================================
 async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
@@ -167,7 +168,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         files = data.get("files", [])
         if 0 <= idx < len(files):
             file_name = files[idx]['name']
-            file_url = f"https://universityai-bot.onrender.com/uploads/{file_name}"
+            file_url = files[idx]['url']
             if file_name.lower().endswith(('.jpg', '.jpeg', '.png', '.gif', '.webp')):
                 await update.callback_query.message.reply_photo(photo=file_url, caption=f"🖼️ *{file_name}*", parse_mode='Markdown')
             else:
@@ -250,14 +251,6 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     state = context.user_data.get('state')
     data = load_data()
 
-    # معالجة الرمز المشفر (إرسال الرمز من قبل المستخدم)
-    if not state:
-        for secure_link in data.get("secure_links", []):
-            if text == secure_link['token']:
-                await update.message.reply_text(f"🔓 *تم فتح الرابط:*\n{secure_link['link']}", reply_markup=get_back_menu())
-                return
-        return
-
     if state == 'announce_text':
         if user_id not in data["admins"]:
             await update.message.reply_text("⛔ هذا القسم للمدير فقط.", reply_markup=get_back_menu())
@@ -333,7 +326,7 @@ async def handle_file(update: Update, context: ContextTypes.DEFAULT_TYPE):
     )
 
 # ==========================================
-# التشغيل الرئيسي (مع الإعادة التلقائية)
+# التشغيل الرئيسي
 # ==========================================
 def start_bot():
     try:
