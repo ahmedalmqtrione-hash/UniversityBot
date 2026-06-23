@@ -14,7 +14,6 @@ from database import load_data, save_data
 from security import security
 from ui_builder import get_student_menu, get_admin_menu, get_back_menu, get_secure_links_menu, get_files_list, get_media_gallery_menu
 
-# تثبيت المكتبات
 def install_packages():
     required = ['requests', 'pillow', 'imageio']
     for package in required:
@@ -60,7 +59,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         data["users"].append(user_id)
         save_data(data)
     
-    if user_id == 123456789:  # ضع معرفك هنا
+    if user_id == 123456789:
         if user_id not in data["admins"]:
             data["admins"].append(user_id)
             save_data(data)
@@ -70,7 +69,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         save_data(data)
     
     await update.message.reply_text(
-        f"🔥 *النظام الخارق النهائي V-Final*\n📌 المطور: {DEVELOPER_NAME}\nاختر قسمك:",
+        f"🔥 *النظام الخارق النهائي*\n📌 المطور: {DEVELOPER_NAME}\nاختر قسمك:",
         parse_mode='Markdown',
         reply_markup=get_student_menu()
     )
@@ -142,14 +141,14 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
 
     # ==========================================
-    # معرض الوسائط (Media Gallery)
+    # معرض الوسائط (نسخة الملفات الوهمية)
     # ==========================================
     if query.data == 'view_media':
         files = data.get("files", [])
         if not files:
-            await query.edit_message_text("📂 لا توجد وسائط مرفوعة بعد.", reply_markup=get_back_menu())
+            await query.edit_message_text("📂 لا توجد وسائط مرفوعة بعد. (يرجى رفع ملف كمدير أولاً).", reply_markup=get_back_menu())
             return
-        await query.edit_message_text("📂 *صالة العرض (عرض مباشر داخل البوت):*", parse_mode='Markdown', reply_markup=get_media_gallery_menu(files))
+        await query.edit_message_text("📂 *صالة العرض (عرض مباشر):*", parse_mode='Markdown', reply_markup=get_media_gallery_menu(files))
         return
 
     if query.data.startswith('play_'):
@@ -159,13 +158,12 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             file_name = files[idx]['name']
             file_url = files[idx]['url']
             
-            # إرسال الوسائط
             if file_name.lower().endswith(('.jpg', '.jpeg', '.png', '.gif', '.webp')):
                 await update.callback_query.message.reply_photo(photo=file_url, caption=f"🖼️ *{file_name}*", parse_mode='Markdown')
             elif file_name.lower().endswith(('.mp4', '.avi', '.mkv', '.webm')):
                 await update.callback_query.message.reply_video(video=file_url, caption=f"🎬 *{file_name}*", parse_mode='Markdown')
             elif file_name.lower().endswith('.pdf'):
-                await update.callback_query.message.reply_document(document=file_url, caption=f"📄 *{file_name}* (عرض/تحميل)", parse_mode='Markdown')
+                await update.callback_query.message.reply_document(document=file_url, caption=f"📄 *{file_name}*", parse_mode='Markdown')
             else:
                 await update.callback_query.message.reply_document(document=file_url, caption=f"📂 *{file_name}*", parse_mode='Markdown')
             
@@ -306,12 +304,9 @@ async def handle_file(update: Update, context: ContextTypes.DEFAULT_TYPE):
     file = await update.message.document.get_file() if update.message.document else await update.message.photo[-1].get_file()
     file_bytes = await file.download_as_bytearray()
     file_name = update.message.document.file_name if update.message.document else f"photo_{datetime.now().timestamp()}.jpg"
-    
-    # تحسين الذاكرة: استخدام مسار مؤقت
     file_url = f"https://universityai-bot.onrender.com/uploads/{file_name}"
     data["files"].append({"name": file_name, "url": file_url})
     save_data(data)
-    
     await update.message.reply_text(
         f"📂 *تم رفع الملف بنجاح!*\n\n📄 الاسم: {file_name}\n🔗 اضغط للعرض أو التحميل:\n{file_url}",
         parse_mode='Markdown',
