@@ -12,11 +12,9 @@ from telegram.ext import Application, CommandHandler, CallbackQueryHandler, Mess
 from config import TOKEN, DEVELOPER_NAME, UNIVERSITY_NAME, BOT_NAME
 from database import load_data, save_data
 from security import security
-from ui_builder import get_student_menu, get_admin_menu, get_back_menu, get_secure_links_menu, get_files_list
+from ui_builder import get_student_menu, get_admin_menu, get_back_menu, get_secure_links_menu, get_files_list, get_media_gallery_menu
 
-# ==========================================
 # التثبيت التلقائي للمكتبات
-# ==========================================
 def install_packages():
     required = ['requests', 'pillow', 'imageio']
     for package in required:
@@ -30,9 +28,7 @@ import requests
 
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
 
-# ==========================================
 # معالج الأخطاء
-# ==========================================
 async def error_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if isinstance(context.error, telegram.error.BadRequest):
         return
@@ -42,9 +38,7 @@ async def error_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     else:
         logging.error(f"Update {update} caused error {context.error}")
 
-# ==========================================
 # الجدول الذكي
-# ==========================================
 def get_smart_schedule():
     now = datetime.now()
     days = ["الاثنين","الثلاثاء","الأربعاء","الخميس","الجمعة","السبت","الأحد"]
@@ -60,9 +54,7 @@ def get_smart_schedule():
     }
     return f"📅 *اليوم: {today}*\n━━━━━━━━━━━━━━━━━━━━━━━━━━\n📚 *المحاضرات:*\n{SCHEDULE.get(today, 'لا يوجد جدول')}"
 
-# ==========================================
 # معالج البدء
-# ==========================================
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
     data = load_data()
@@ -86,9 +78,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         reply_markup=get_student_menu()
     )
 
-# ==========================================
 # معالج الأزرار (القلب)
-# ==========================================
 async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
@@ -155,25 +145,35 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             )
         return
 
-    if query.data == 'view_files':
+    # ==========================================
+    # قسم عرض الوسائط (Media Gallery)
+    # ==========================================
+    if query.data == 'view_media':
         files = data.get("files", [])
         if not files:
-            await query.edit_message_text("📂 لا توجد ملفات.", reply_markup=get_back_menu())
+            await query.edit_message_text("📂 لا توجد وسائط مرفوعة بعد.", reply_markup=get_back_menu())
             return
-        await query.edit_message_text("📂 *الملفات المتاحة:*", parse_mode='Markdown', reply_markup=get_files_list(files))
+        await query.edit_message_text("📂 *صالة العرض (عرض مباشر داخل البوت):*", parse_mode='Markdown', reply_markup=get_media_gallery_menu(files))
         return
 
-    if query.data.startswith('file_'):
-        idx = int(query.data.replace('file_', ''))
+    if query.data.startswith('play_'):
+        idx = int(query.data.replace('play_', ''))
         files = data.get("files", [])
         if 0 <= idx < len(files):
             file_name = files[idx]['name']
             file_url = files[idx]['url']
+            
+            # إرسال الوسائط بدون تحميل
             if file_name.lower().endswith(('.jpg', '.jpeg', '.png', '.gif', '.webp')):
                 await update.callback_query.message.reply_photo(photo=file_url, caption=f"🖼️ *{file_name}*", parse_mode='Markdown')
+            elif file_name.lower().endswith(('.mp4', '.avi', '.mkv', '.webm')):
+                await update.callback_query.message.reply_video(video=file_url, caption=f"🎬 *{file_name}*", parse_mode='Markdown')
+            elif file_name.lower().endswith('.pdf'):
+                await update.callback_query.message.reply_document(document=file_url, caption=f"📄 *{file_name}* (عرض/تحميل)", parse_mode='Markdown')
             else:
-                await update.callback_query.message.reply_document(document=file_url, caption=f"📄 *{file_name}*", parse_mode='Markdown')
-            await query.edit_message_text("✅ تم فتح الملف.", reply_markup=get_back_menu())
+                await update.callback_query.message.reply_document(document=file_url, caption=f"📂 *{file_name}*", parse_mode='Markdown')
+            
+            await query.edit_message_text("✅ تم تشغيل الوسائط.", reply_markup=get_back_menu())
         return
 
     if query.data == 'games':
@@ -242,9 +242,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         ]))
         return
 
-# ==========================================
 # معالج الرسائل
-# ==========================================
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
     text = update.message.text
@@ -303,9 +301,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         context.user_data.clear()
         return
 
-# ==========================================
 # معالج الملفات
-# ==========================================
 async def handle_file(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
     data = load_data()
@@ -325,9 +321,7 @@ async def handle_file(update: Update, context: ContextTypes.DEFAULT_TYPE):
         reply_markup=get_admin_menu()
     )
 
-# ==========================================
 # التشغيل الرئيسي
-# ==========================================
 def start_bot():
     try:
         print("🤖 تشغيل البوت الخارق...")
