@@ -27,6 +27,7 @@ def get_back_menu():
     return InlineKeyboardMarkup([
         [InlineKeyboardButton("🔙 رجوع", callback_data='back')],
         [InlineKeyboardButton("🏠 القائمة الرئيسية", callback_data='home')]
+
     ])
 
 def get_secure_links_menu(links):
@@ -41,5 +42,25 @@ def get_files_list(files):
     for i, file in enumerate(files):
         icon = "📄" if file['name'].endswith('.pdf') else "🖼️" if file['name'].endswith(('.jpg','.png','.jpeg')) else "🎬" if file['name'].endswith(('.mp4','.avi','.mkv')) else "📁"
         keyboard.append([InlineKeyboardButton(f"{icon} {file['name']}", callback_data=f"file_{i}")])
+    keyboard.append([InlineKeyboardButton("🔙 رجوع", callback_data='back')])
+    return InlineKeyboardMarkup(keyboard)
+# ==========================================
+# قائمة معرض الوسائط (Media Gallery) - تم إضافتها الآن
+# ==========================================
+def get_media_gallery_menu(files):
+    keyboard = []
+    for i, file in enumerate(files):
+        # تحديد أيقونة حسب نوع الملف
+        if file['name'].endswith(('.pdf')):
+            icon = "📄"
+        elif file['name'].endswith(('.mp4', '.avi', '.mkv', '.webm')):
+            icon = "🎬"
+        elif file['name'].endswith(('.jpg', '.jpeg', '.png', '.gif', '.webp')):
+            icon = "🖼️"
+        else:
+            icon = "📁"
+        
+        keyboard.append([InlineKeyboardButton(f"{icon} {file['name']}", callback_data=f"play_{i}")])
+    
     keyboard.append([InlineKeyboardButton("🔙 رجوع", callback_data='back')])
     return InlineKeyboardMarkup(keyboard)

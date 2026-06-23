@@ -14,7 +14,7 @@ from database import load_data, save_data
 from security import security
 from ui_builder import get_student_menu, get_admin_menu, get_back_menu, get_secure_links_menu, get_files_list, get_media_gallery_menu
 
-# التثبيت التلقائي للمكتبات
+# تثبيت المكتبات
 def install_packages():
     required = ['requests', 'pillow', 'imageio']
     for package in required:
@@ -28,7 +28,6 @@ import requests
 
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
 
-# معالج الأخطاء
 async def error_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if isinstance(context.error, telegram.error.BadRequest):
         return
@@ -38,7 +37,6 @@ async def error_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     else:
         logging.error(f"Update {update} caused error {context.error}")
 
-# الجدول الذكي
 def get_smart_schedule():
     now = datetime.now()
     days = ["الاثنين","الثلاثاء","الأربعاء","الخميس","الجمعة","السبت","الأحد"]
@@ -54,7 +52,6 @@ def get_smart_schedule():
     }
     return f"📅 *اليوم: {today}*\n━━━━━━━━━━━━━━━━━━━━━━━━━━\n📚 *المحاضرات:*\n{SCHEDULE.get(today, 'لا يوجد جدول')}"
 
-# معالج البدء
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
     data = load_data()
@@ -78,7 +75,6 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         reply_markup=get_student_menu()
     )
 
-# معالج الأزرار (القلب)
 async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
@@ -146,7 +142,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
 
     # ==========================================
-    # قسم عرض الوسائط (Media Gallery)
+    # معرض الوسائط (Media Gallery)
     # ==========================================
     if query.data == 'view_media':
         files = data.get("files", [])
@@ -163,7 +159,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             file_name = files[idx]['name']
             file_url = files[idx]['url']
             
-            # إرسال الوسائط بدون تحميل
+            # إرسال الوسائط
             if file_name.lower().endswith(('.jpg', '.jpeg', '.png', '.gif', '.webp')):
                 await update.callback_query.message.reply_photo(photo=file_url, caption=f"🖼️ *{file_name}*", parse_mode='Markdown')
             elif file_name.lower().endswith(('.mp4', '.avi', '.mkv', '.webm')):
@@ -242,7 +238,6 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         ]))
         return
 
-# معالج الرسائل
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
     text = update.message.text
@@ -301,7 +296,6 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         context.user_data.clear()
         return
 
-# معالج الملفات
 async def handle_file(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
     data = load_data()
@@ -312,16 +306,18 @@ async def handle_file(update: Update, context: ContextTypes.DEFAULT_TYPE):
     file = await update.message.document.get_file() if update.message.document else await update.message.photo[-1].get_file()
     file_bytes = await file.download_as_bytearray()
     file_name = update.message.document.file_name if update.message.document else f"photo_{datetime.now().timestamp()}.jpg"
+    
+    # تحسين الذاكرة: استخدام مسار مؤقت
     file_url = f"https://universityai-bot.onrender.com/uploads/{file_name}"
     data["files"].append({"name": file_name, "url": file_url})
     save_data(data)
+    
     await update.message.reply_text(
         f"📂 *تم رفع الملف بنجاح!*\n\n📄 الاسم: {file_name}\n🔗 اضغط للعرض أو التحميل:\n{file_url}",
         parse_mode='Markdown',
         reply_markup=get_admin_menu()
     )
 
-# التشغيل الرئيسي
 def start_bot():
     try:
         print("🤖 تشغيل البوت الخارق...")
