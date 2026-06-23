@@ -141,14 +141,15 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
 
     # ==========================================
-    # معرض الوسائط (نسخة الملفات الوهمية)
+    # زر الملفات يعمل الآن إلى معرض الوسائط
     # ==========================================
-    if query.data == 'view_media':
+    if query.data == 'view_files':
+        # تحويل الطلب إلى المعرض الجديد
         files = data.get("files", [])
         if not files:
             await query.edit_message_text("📂 لا توجد وسائط مرفوعة بعد. (يرجى رفع ملف كمدير أولاً).", reply_markup=get_back_menu())
             return
-        await query.edit_message_text("📂 *صالة العرض (عرض مباشر):*", parse_mode='Markdown', reply_markup=get_media_gallery_menu(files))
+        await query.edit_message_text("📂 *صالة العرض (عرض مباشر داخل البوت):*", parse_mode='Markdown', reply_markup=get_media_gallery_menu(files))
         return
 
     if query.data.startswith('play_'):
